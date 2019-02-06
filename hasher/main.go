@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -19,9 +20,12 @@ func main() {
 	if err != nil {
 		stdlog.Fatal(err)
 	}
+	resultsOutput := os.Stdout
 
-	a := app.New(os.Stdout, stdlog, params)
+	a := app.New(resultsOutput, stdlog, params)
 	if err := a.Run(); err != nil {
-		stdlog.Fatal(err)
+		fmt.Fprintf(resultsOutput, "%s", err)
+		os.Exit(1)
 	}
+	os.Exit(0)
 }
