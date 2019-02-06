@@ -27,7 +27,7 @@ func (a pool) exec(fn job) error {
 	defer close(out)
 
 	for i := a.parallel; i > 0; i-- {
-		go worker(i, in, out, a.client, download)
+		go worker(i, in, out, a.client, fn)
 	}
 	go scheduler(a.urls, in)
 

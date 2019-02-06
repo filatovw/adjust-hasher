@@ -46,8 +46,7 @@ Examples
     $> ./myhttp adjust.com
     http://adjust.com d1b40e2a2ba488a054186e4ed0733f9752f66949
 
-    $> ./myhttp -parallel 3 adjust.com google.com facebook.com yahoo.com yandex.com
-    twitter.com reddit.com/r/funny reddit.com/r/notfunny baroquemusiclibrary.com
+    $> ./myhttp -parallel 3 adjust.com google.com facebook.com yahoo.com yandex.com twitter.com reddit.com/r/funny reddit.com/r/notfunny baroquemusiclibrary.com
 
     http://google.com 8ff1c478ccca08cca025b028f68b352f
     http://adjust.com 6b2560b9a5262571258cc173248b7492
