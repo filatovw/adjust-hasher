@@ -47,7 +47,7 @@ Execute with concurrency parameter:
 
 Execute in debug mode:
 
-    DEBUG=true ./hasher/bin/hasher -parallel 2  adjust.com google.com facebook.com
+    ./hasher/bin/hasher -debug -parallel 2  adjust.com google.com facebook.com
 
     hasher ### 2019/02/06 18:08:34.131314 /Users/vadimfilatov/projects/experiments/go/src/github.com/filatovw/adjust-hasher/hasher/app/pool.go:38: worker 2: http://adjust.com :: 31d8d84f3aa297e1e495d9c5b2942076
     http://adjust.com 31d8d84f3aa297e1e495d9c5b2942076

@@ -20,8 +20,8 @@ type pool struct {
 }
 
 func (a pool) exec(fn job) error {
-	in := make(chan string, a.parallel)
-	out := make(chan result, a.parallel)
+	in := make(chan string)
+	out := make(chan result)
 
 	defer close(in)
 	defer close(out)
@@ -87,7 +87,7 @@ WORK_END:
 
 type job func(http.Client, string) (string, []byte, error)
 
-func download(client http.Client, u string) (string, []byte, error) {
+func download(client Doer, u string) (string, []byte, error) {
 	up, err := url.Parse(u)
 	if err != nil {
 		return "", nil, fmt.Errorf("download: %s", err)
