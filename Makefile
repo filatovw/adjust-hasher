@@ -1,6 +1,6 @@
 PHONY:build
 build:
-	go build -o ./hasher/bin/hasher ./hasher/
+	go build -o ./hasher/bin/hasher ./hasher/cmd/cli
 
 PHONY:clean
 clean:

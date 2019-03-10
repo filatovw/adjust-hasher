@@ -13,22 +13,23 @@ type App struct {
 	w    io.Writer
 }
 
-func New(w io.Writer, log *log.Logger, p Params) App {
+func New(w io.Writer, p Params) App {
 	tr := &http.Transport{
 		MaxIdleConns:       10,
 		IdleConnTimeout:    10 * time.Second,
 		DisableCompression: true,
 	}
+	logger := newLogger(p.Debug)
 	pooler := pool{
-		log:      log,
+		log:      logger,
 		urls:     p.URLs,
 		parallel: p.Parallel,
-		w:        w,
 		client:   http.Client{Transport: tr},
+		w:        w,
 	}
 	return App{
 		pool: pooler,
-		log:  log,
+		log:  logger,
 	}
 }
 
