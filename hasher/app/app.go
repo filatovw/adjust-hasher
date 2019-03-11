@@ -28,9 +28,8 @@ type Doer interface {
 // New create application
 func New(w io.Writer, params Params) App {
 	tr := &http.Transport{
-		MaxIdleConns:       10,
-		IdleConnTimeout:    10 * time.Second,
-		DisableCompression: true,
+		MaxIdleConns:    10,
+		IdleConnTimeout: 30 * time.Second,
 	}
 	return App{
 		client: &http.Client{Transport: tr},
