@@ -11,6 +11,7 @@ type Params struct {
 	URLs     []string
 }
 
+// ReadParams read parameters from command line
 func ReadParams() (Params, error) {
 	p := Params{}
 	flag.IntVar(&p.Parallel, "parallel", 10, "number of parallel processes")

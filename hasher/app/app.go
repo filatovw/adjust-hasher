@@ -4,47 +4,43 @@ import (
 	"crypto/md5"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 )
 
+// App instance of hasher
 type App struct {
-	pool   pool
 	log    *log.Logger
 	w      io.Writer
 	params Params
 	client Doer
 }
+
+// Doer does http queries
 type Doer interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
+// New create application
 func New(w io.Writer, params Params) App {
 	tr := &http.Transport{
 		MaxIdleConns:       10,
 		IdleConnTimeout:    10 * time.Second,
 		DisableCompression: true,
 	}
-	logger := newLogger(params.Debug)
-	p := pool{
-		log:      logger,
-		urls:     params.URLs,
-		parallel: params.Parallel,
-		client:   http.Client{Transport: tr},
-		w:        w,
-	}
 	return App{
 		client: &http.Client{Transport: tr},
 		params: params,
-		pool:   p,
-		log:    logger,
+		log:    newLogger(params.Debug),
 		w:      w,
 	}
 }
 
-type res struct {
+type result struct {
 	err  error
 	body string
 	url  string
@@ -52,13 +48,10 @@ type res struct {
 
 // Run execute downloading for a bunch of urls
 func (a App) Run() error {
-	/*
-		return a.pool.exec(download)
-	*/
 	a.log.Printf("config %+v", a.params)
 	wg := &sync.WaitGroup{}
 	queue := make(chan string)
-	results := make(chan res)
+	results := make(chan result)
 
 	wg.Add(1)
 	go func() {
@@ -74,17 +67,17 @@ func (a App) Run() error {
 	for i := 0; i < a.params.Parallel; i++ {
 		i := i
 		wg.Add(1)
-		go func(queue <-chan string, results chan<- res, wg *sync.WaitGroup) {
+		go func(queue <-chan string, results chan<- result, wg *sync.WaitGroup) {
 			a.log.Printf("worker %d started", i)
 			for job := range queue {
 				if requestedURL, body, err := download(a.client, job); err != nil {
 					a.log.Printf("downloaded with error: %s", err)
-					results <- res{
+					results <- result{
 						err: err,
 					}
 				} else {
 					a.log.Printf("%s downloaded successfully", requestedURL)
-					results <- res{
+					results <- result{
 						body: fmt.Sprintf("%x", md5.Sum(body)),
 						url:  requestedURL,
 					}
@@ -101,13 +94,47 @@ func (a App) Run() error {
 		close(results)
 	}()
 
-	for result := range results {
-		if result.err != nil {
-			a.log.Printf("error: %s", result.err)
+	for r := range results {
+		if r.err != nil {
+			a.log.Printf("error: %s", r.err)
 		} else {
-			fmt.Fprintf(a.w, "%s %s\n", result.url, result.body)
+			if _, err := fmt.Fprintf(a.w, "%s %s\n", r.url, r.body); err != nil {
+				return fmt.Errorf("error writing results: %s", err)
+			}
 		}
 	}
 
 	return nil
+}
+
+// download URL content
+func download(client Doer, u string) (string, []byte, error) {
+	up, err := url.Parse(u)
+	if err != nil {
+		return "", nil, fmt.Errorf("download: %s", err)
+	}
+	if !up.IsAbs() {
+		up.Scheme = "http"
+	}
+	req, err := http.NewRequest(http.MethodGet, up.String(), nil)
+	if err != nil {
+		return "", nil, fmt.Errorf("download: %s", err)
+	}
+	req.Header.Add("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36")
+	req.Header.Add("accept-language", "en-US,en;q=0.9,ru;q=0.8")
+
+	res, err := client.Do(req)
+	if err != nil {
+		return "", nil, fmt.Errorf("download: %s", err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode >= 400 {
+		return "", nil, fmt.Errorf("download: [%d] %s", res.StatusCode, res.Status)
+	}
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return "", nil, fmt.Errorf("download: %s", err)
+	}
+
+	return up.String(), body, nil
 }
